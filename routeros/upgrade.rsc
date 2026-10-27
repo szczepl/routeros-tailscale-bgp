@@ -6,7 +6,7 @@
 # /import routeros/upgrade.rsc
 
 :local disk "usb1"
-:local image "tailscale-arm64.tar"
+:local image "tailscale-arm64.tar"    ;# tailscale-arm.tar on 32-bit ARM, tailscale-amd64.tar on CHR/x86
 :local routerIp "192.168.88.1"
 
 :local ct [/container/find where name=tailscale]

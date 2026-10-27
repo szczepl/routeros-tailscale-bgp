@@ -3,13 +3,13 @@
 
 Alpine + tailscale/tailscaled + BIRD + the tailscale.sh entrypoint, assembled
 from prebuilt pieces:
-  - Alpine minirootfs (aarch64 or x86_64)
+  - Alpine minirootfs (aarch64, armv7 or x86_64)
   - Alpine apk packages (iptables, iproute2, bird2 + deps), resolved from APKINDEX
   - official static Tailscale binaries from pkgs.tailscale.com
 and written as a legacy `docker save` tar with *uncompressed* layers, which is
 what RouterOS /container/add file=... can import.
 
-Usage: build.py [--arch arm64|amd64] [--tailscale 1.104.2] [--alpine 3.24] [-o FILE]
+Usage: build.py [--arch arm64|arm|amd64] [--tailscale 1.104.2] [--alpine 3.24] [-o FILE]
 """
 import argparse
 import gzip
@@ -138,14 +138,16 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--alpine", default="3.24")
     ap.add_argument("--tailscale", help="default: latest stable")
-    ap.add_argument("--arch", default="arm64", choices=["arm64", "amd64"])
+    ap.add_argument("--arch", default="arm64", choices=["arm64", "arm", "amd64"])
     ap.add_argument("-o", "--output")
     ap.add_argument("--tag")
     a = ap.parse_args()
 
-    alpine_arch, ts_arch, oci_arch = {
-        "arm64": ("aarch64", "arm64", "arm64"),
-        "amd64": ("x86_64", "amd64", "amd64"),
+    # arm = 32-bit ARMv7 (RouterOS "arm"): Alpine armv7, Tailscale's arm build.
+    alpine_arch, ts_arch, oci_arch, oci_variant = {
+        "arm64": ("aarch64", "arm64", "arm64", None),
+        "arm": ("armv7", "arm", "arm", "v7"),
+        "amd64": ("x86_64", "amd64", "amd64", None),
     }[a.arch]
     if not a.output:
         a.output = os.path.join(HERE, f"tailscale-{a.arch}.tar")
@@ -214,6 +216,8 @@ def main():
         "history": [{"created_by": f"alpine {rootfs_name} + apk {' '.join(PACKAGES)}"},
                     {"created_by": f"tailscale {ts_ver} + tailscale.sh"}],
     }
+    if oci_variant:
+        config["variant"] = oci_variant
     cfg = json.dumps(config, separators=(",", ":")).encode()
     cfg_name = hashlib.sha256(cfg).hexdigest() + ".json"
     layer_paths = [d.split(":")[1] + "/layer.tar" for d in diff_ids]

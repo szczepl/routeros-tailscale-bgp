@@ -13,7 +13,7 @@
 :local routerIp "192.168.88.1"
 :local ctIp "192.168.88.49"
 :local disk "usb1"
-:local image "tailscale-arm64.tar"
+:local image "tailscale-arm64.tar"    ;# tailscale-arm.tar on 32-bit ARM, tailscale-amd64.tar on CHR/x86
 :local hostname "routeros"
 :local routerAs "65012"
 :local ctAs "65100"

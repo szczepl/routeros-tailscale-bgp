@@ -53,20 +53,39 @@ as the gateway.
 - RouterOS 7 with the `container` package and `/system/device-mode` set to
   `container=yes` (confirmed with a cold reboot or the mode button). Tested on
   7.23–7.25.
-- arm64 (RB5009, CCR2004/2116, hAP ax², hAP ax³, Chateau ax, L009) or amd64
-  (CHR, x86). 32-bit ARM (RB4011, hAP ac²) would need an armv7 variant in
-  `build.py`. MIPS models can't run containers at all.
-- External storage for the image and container root (USB or NVMe). Don't put
-  them on the internal flash.
-- About 95 MB of disk and around 100 MB of RAM while running.
+- A supported architecture. `/system/resource/print` shows which one you
+  have (`architecture-name`):
+
+  | RouterOS | `--arch` | Examples |
+  |---|---|---|
+  | arm64 | `arm64` | RB5009, CCR2004, CCR2116, hAP ax², hAP ax³, Chateau ax, L009 |
+  | arm | `arm` | RB4011, RB3011, RB1100AHx4, hAP ac², hAP ac³, cAP ac |
+  | x86_64 | `amd64` | CHR, x86 |
+
+  MIPS models (hEX, hAP lite, RB750Gr3 and similar) can't run containers.
+- External storage for the image and container root (USB, SD, NVMe or SATA).
+  Don't put them on the internal flash.
+- About 80–95 MB of disk for the image, the same again for the extracted
+  container, and around 100 MB of RAM while running. On 32-bit models with
+  128 MB of RAM (hAP ac²) that leaves very little for RouterOS itself; 256 MB
+  or more is a safer minimum.
+
+The arm64 and amd64 images run in production. The 32-bit `arm` image is built
+the same way (Alpine armv7, Tailscale's official arm build, OCI variant v7) but
+hasn't been tested on hardware yet. If you run it, please open an issue with
+the model and RouterOS version, whether it worked or not.
 
 ## Building the image
 
 ```sh
 python3 build.py                      # arm64, latest stable Tailscale, Alpine 3.24
+python3 build.py --arch arm           # 32-bit ARM (ARMv7)
 python3 build.py --arch amd64         # CHR / x86
 python3 build.py --tailscale 1.104.2  # pin a version
 ```
+
+The output is `tailscale-<arch>.tar`. Set the same file name in the `image`
+variable of `routeros/setup.rsc` and `routeros/upgrade.rsc`.
 
 The script downloads an Alpine minirootfs, the `iptables ip6tables
 iproute2-minimal bird2` packages with their dependencies (resolved from
